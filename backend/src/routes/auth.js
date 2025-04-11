@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 
 module.exports = async function (fastify) {
+
+  // POST USERS 
   fastify.post('/register', {
     schema: {
       body: {
@@ -53,4 +55,35 @@ module.exports = async function (fastify) {
       reply.code(500).send({ error: 'Internal server error' });
     }
   });
+
+  // REFRESH TOKEN 
+
+  fastify.post('/refresh', async (request, reply) => {
+    const { refreshToken } = request.body;
+  
+    const user = await fastify.prisma.user.findFirst({
+      where: { refreshToken }
+    });
+  
+    if (!user) {
+      return reply.code(403).send({ error: "Refresh token invalide" });
+    }
+  
+    // Générer nouveau access token
+    const newAccessToken = fastify.jwt.sign({ id: user.id });
+  
+    // Générer nouveau refresh token
+    const newRefreshToken = fastify.jwt.sign({ id: user.id }, { expiresIn: '7d' });
+    await fastify.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: newRefreshToken }
+    });
+  
+    return { 
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
+    };
+  });
+
+
 };
