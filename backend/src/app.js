@@ -35,6 +35,7 @@ prisma.$queryRaw`SELECT 1+1 AS test`
 
 // Routes
 fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
+fastify.register(require('./routes/users'));
 
 // Démarrage
 const start = async () => {
