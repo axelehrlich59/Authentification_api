@@ -33,9 +33,21 @@ prisma.$queryRaw`SELECT 1+1 AS test`
   .then(() => console.log('✅ Database connection OK'))
   .catch(e => console.error('❌ Database connection failed', e));
 
-// Routes
+// Routes imports
 fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
 fastify.register(require('./routes/users'));
+fastify.register(require('./routes/profile'));
+
+// Decorations 
+fastify.decorate('authenticate', async (request, reply) => {
+  try {
+    await request.jwtVerify();
+    
+  } catch (err) {
+    // Si échec, on bloque l'accès
+    reply.code(401).send({ error: 'Accès refusé' });
+  }
+});
 
 // Démarrage
 const start = async () => {

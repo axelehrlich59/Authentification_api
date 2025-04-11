@@ -41,7 +41,10 @@ module.exports = async function (fastify) {
       });
 
       // Génération JWT
-      const token = fastify.jwt.sign({ id: user.id });
+      const token = fastify.jwt.sign({ 
+        id: user.id,
+        email: user.email 
+      });
 
       return { token };
 
