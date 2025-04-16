@@ -39,6 +39,8 @@ fastify.register(require('./routes/users'));
 fastify.register(require('./routes/profile'));
 
 // Decorations 
+
+
 fastify.decorate('authenticate', async (request, reply) => {
   try {
     await request.jwtVerify();
@@ -47,6 +49,24 @@ fastify.decorate('authenticate', async (request, reply) => {
     // Si échec, on bloque l'accès
     reply.code(401).send({ error: 'Accès refusé' });
   }
+});
+
+fastify.decorate('verifyRefreshToken', async (request, reply) => {
+  const { refreshToken } = request.body;
+  
+  if (!refreshToken) {
+    return reply.code(401).send({ error: 'Refresh token manquant' });
+  }
+
+  const user = await fastify.prisma.user.findFirst({ 
+    where: { refreshToken } 
+  });
+
+  if (!user) {
+    return reply.code(403).send({ error: 'Refresh token invalide' });
+  }
+
+  request.user = user;
 });
 
 // Démarrage
