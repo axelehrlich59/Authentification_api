@@ -58,12 +58,19 @@ fastify.decorate('verifyRefreshToken', async (request, reply) => {
     return reply.code(401).send({ error: 'Refresh token manquant' });
   }
 
-  const user = await fastify.prisma.user.findFirst({ 
-    where: { refreshToken } 
+  let payload;
+  try {
+    payload = await fastify.jwt.verify(refreshToken);
+  } catch (err) {
+    return reply.code(403).send({ error: 'Refresh token invalide ou expiré' });
+  }
+
+  const user = await fastify.prisma.user.findUnique({
+    where: { id: payload.id }
   });
 
-  if (!user) {
-    return reply.code(403).send({ error: 'Refresh token invalide' });
+  if (!user || user.refreshToken !== refreshToken) {
+    return reply.code(403).send({ error: 'Refresh token non reconnu' });
   }
 
   request.user = user;

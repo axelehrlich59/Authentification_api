@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = async function (fastify) {
 
@@ -9,50 +10,90 @@ module.exports = async function (fastify) {
         type: 'object',
         required: ['email', 'password'],
         properties: {
-          email: { type: 'string', format: 'email' },
-          password: { type: 'string', minLength: 6 }
+          email: {
+            type: 'string',
+            format: 'email',
+            maxLength: 254
+          },
+          password: { 
+            type: 'string', 
+            minLength: 12,
+            pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$'
+          }
         }
       }
     }
   }, async (request, reply) => {
     try {
       const { email, password } = request.body;
-      
+      const normalizedEmail = email.trim().toLowerCase();
+  
       // Vérification existence utilisateur
       const existingUser = await fastify.prisma.user.findUnique({
-        where: { email }
+        where: { email: normalizedEmail }
       });
-
+  
       if (existingUser) {
-        return reply.code(400).send({ error: 'User already exists' });
+        return reply.code(400).send({ error: 'Email déjà utilisé' });
       }
-
-      // Hash mot de passe
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      console.log('Hashing...');
-      const hashed = await bcrypt.hash('test', 10);
-      console.log('Hash result:', hashed);
-
+  
+      // Hachage du mot de passe
+      const hashedPassword = await bcrypt.hash(password, 12);
+  
       // Création utilisateur
       const user = await fastify.prisma.user.create({
         data: {
-          email,
-          password: hashedPassword
+          email: normalizedEmail,
+          password: hashedPassword,
+          isVerified: false
+        },
+        select: { id: true, email: true }
+      });
+  
+      // Génération JWT
+      const token = fastify.jwt.sign(
+        { 
+          id: user.id,
+          auth_time: Math.floor(Date.now() / 1000)
+        }, 
+        { 
+          expiresIn: '15m',
+          issuer: 'votre-domaine.com'
+        }
+      );
+  
+      // Headers de sécurité
+      reply.header('X-Content-Type-Options', 'nosniff');
+      reply.header('X-Frame-Options', 'DENY');
+  
+      // Réponse 201 Created
+      return reply.code(201).send({
+        token,
+        user: {
+          id: user.id,
+          email: user.email
         }
       });
-
-      // Génération JWT
-      const token = fastify.jwt.sign({ 
-        id: user.id,
-        email: user.email 
-      });
-
-      return { token };
-
+  
     } catch (error) {
-      fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      fastify.log.error({
+        message: 'Erreur complète',
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          prismaCode: error.code
+        },
+        request: {
+          body: request.body
+        }
+      });
+  
+      // Réponse d'erreur obligatoire
+      reply.code(500).send({
+        error: 'Erreur serveur',
+        code: 'INTERNAL_ERROR'
+      });
     }
   });
 
