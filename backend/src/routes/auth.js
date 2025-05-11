@@ -1,10 +1,34 @@
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
+const { register } = require('../controllers/auth');
+
 
 module.exports = async function (fastify) {
 
-  // REGISTER USER
+
   fastify.post('/register', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: {
+          email: {
+            type: 'string',
+            format: 'email',
+            maxLength: 254
+          },
+          password: { 
+            type: 'string', 
+            minLength: 12,
+            pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$'
+          }
+        }
+      }
+    }
+  }, register);
+
+  // REGISTER USER
+  /* fastify.post('/register', {
     schema: {
       body: {
         type: 'object',
@@ -95,7 +119,7 @@ module.exports = async function (fastify) {
         code: 'INTERNAL_ERROR'
       });
     }
-  });
+  }); */
 
   // LOGIN USER
   fastify.post('/login', {
