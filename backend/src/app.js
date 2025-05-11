@@ -38,6 +38,10 @@ fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
 fastify.register(require('./routes/users'));
 fastify.register(require('./routes/profile'));
 
+// Middlewares 
+const errorHandler = require('./middleware/errorHandler');
+fastify.setErrorHandler(errorHandler);
+
 // Decorations 
 
 
