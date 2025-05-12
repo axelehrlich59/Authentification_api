@@ -35,7 +35,7 @@ prisma.$queryRaw`SELECT 1+1 AS test`
 
 // Routes imports
 fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
-fastify.register(require('./routes/users'));
+fastify.register(require('./routes/login'));
 fastify.register(require('./routes/profile'));
 fastify.register(require('./routes/logout'));
 
