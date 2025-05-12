@@ -37,6 +37,7 @@ prisma.$queryRaw`SELECT 1+1 AS test`
 fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
 fastify.register(require('./routes/users'));
 fastify.register(require('./routes/profile'));
+fastify.register(require('./routes/logout'));
 
 // Middlewares 
 const errorHandler = require('./middleware/errorHandler');
@@ -50,7 +51,6 @@ fastify.decorate('authenticate', async (request, reply) => {
     await request.jwtVerify();
     
   } catch (err) {
-    // Si échec, on bloque l'accès
     reply.code(401).send({ error: 'Accès refusé' });
   }
 });

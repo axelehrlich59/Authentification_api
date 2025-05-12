@@ -21,4 +21,6 @@ async function registerUser({ email, password }) {
   return user;
 }
 
-module.exports = { registerUser };
+module.exports = { 
+  registerUser,
+};

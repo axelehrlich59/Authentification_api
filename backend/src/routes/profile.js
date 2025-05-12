@@ -1,6 +1,6 @@
 async function profilRoutes(fastify) {
-    fastify.get('/profile', {
-        onRequest: [fastify.authenticate] // Middleware
+    fastify.get('/profile', { 
+      preHandler: [fastify.authenticate] 
     }, async (request) => {
         const user = await fastify.prisma.user.findUnique({
             where: { id: request.user.id },
