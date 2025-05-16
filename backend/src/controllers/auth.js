@@ -3,9 +3,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 
 async function register(request, reply) {
   try {
-    const payload = request.body;
-    const user = await registerUser(payload);
-    // Générer le JWT via la fonction décorée sur request
+    const user = await registerUser(request.server.prisma, request.body);
     const token = await reply.server.jwt.sign(
         { id: user.id, auth_time: Math.floor(Date.now() / 1000) },
         { expiresIn: '15m' }
@@ -17,7 +15,7 @@ async function register(request, reply) {
       error: {
         name: err.name,
         message: err.message,
-        stack: err.stack, // Toujours afficher la stack pour debug
+        stack: err.stack,
         prismaCode: err.code
       },
       request: {

@@ -15,6 +15,12 @@ async function loginUser(prisma, email, password) {
     throw err;
   }
 
+  if (!user.isVerified) {
+    const err = new Error('Veuillez vérifier votre email avant de vous connecter');
+    err.statusCode = 403;
+    throw err;
+  }
+
   return user;
 }
 

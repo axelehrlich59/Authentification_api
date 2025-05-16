@@ -38,6 +38,7 @@ fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
 fastify.register(require('./routes/login'));
 fastify.register(require('./routes/profile'));
 fastify.register(require('./routes/logout'));
+fastify.register(require('./routes/emailVerification'), { prefix: '/api/auth' });
 
 // Middlewares 
 const errorHandler = require('./middleware/errorHandler');

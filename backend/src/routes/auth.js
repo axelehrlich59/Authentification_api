@@ -30,25 +30,21 @@ module.exports = async function (fastify) {
   // REFRESH TOKEN 
 
   fastify.post('/refresh', {
-    // Utilisation du middleware
     preHandler: [fastify.verifyRefreshToken]
   }, async (request, reply) => {
     try {
       const { user } = request;
   
-      // Générer nouveau access token
       const newAccessToken = fastify.jwt.sign(
         { id: user.id }, 
         { expiresIn: '15m' }
       );
   
-      // Générer nouveau refresh token (rotation)
       const newRefreshToken = fastify.jwt.sign(
         { id: user.id }, 
         { expiresIn: '7d' }
       );
-  
-      // Mettre à jour en base
+
       await fastify.prisma.user.update({
         where: { id: user.id },
         data: { refreshToken: newRefreshToken }
