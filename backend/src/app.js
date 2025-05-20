@@ -17,6 +17,13 @@ fastify.register(require('@fastify/jwt'), {
   secret: process.env.JWT_SECRET
 });
 
+fastify.register(require('@fastify/cookie'), {
+  secret: process.env.COOKIE_SECRET, 
+  parseOptions: {}
+});
+
+fastify.register(require('./plugins/decorators'));
+
 // Database
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
@@ -35,9 +42,10 @@ prisma.$queryRaw`SELECT 1+1 AS test`
 
 // Routes imports
 fastify.register(require('./routes/auth'), { prefix: '/api/auth' });
-fastify.register(require('./routes/login'));
+fastify.register(require('./routes/login'), {prefix: '/api/auth' });
+fastify.register(require('./routes/token'), { prefix: '/api/auth' });
 fastify.register(require('./routes/profile'));
-fastify.register(require('./routes/logout'));
+fastify.register(require('./routes/logout'), {prefix: '/api/auth' });
 fastify.register(require('./routes/emailVerification'), { prefix: '/api/auth' });
 
 // Middlewares 
@@ -47,55 +55,14 @@ fastify.setErrorHandler(errorHandler);
 // Decorations 
 
 
-fastify.decorate('authenticate', async (request, reply) => {
-  try {
-    await request.jwtVerify();
-    
-  } catch (err) {
-    reply.code(401).send({ error: 'Accès refusé' });
-  }
-});
-
-fastify.decorate('verifyRefreshToken', async (request, reply) => {
-  const { refreshToken } = request.body;
-  
-  if (!refreshToken) {
-    return reply.code(401).send({ error: 'Refresh token manquant' });
-  }
-
-  let payload;
-  try {
-    payload = await fastify.jwt.verify(refreshToken);
-  } catch (err) {
-    return reply.code(403).send({ error: 'Refresh token invalide ou expiré' });
-  }
-
-  const user = await fastify.prisma.user.findUnique({
-    where: { id: payload.id }
-  });
-
-  if (!user || user.refreshToken !== refreshToken) {
-    return reply.code(403).send({ error: 'Refresh token non reconnu' });
-  }
-
-  request.user = user;
-});
-
 // Démarrage
 const start = async () => {
   try {
     await fastify.listen({ port: 3000 });
-    console.log(`Server running on ${fastify.server.address().port}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
   }
 };
-
-fastify.addHook('onReady', async () => {
-  console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅' : '❌');
-});
-
-console.log('✅ Server is alive!');
 
 start();

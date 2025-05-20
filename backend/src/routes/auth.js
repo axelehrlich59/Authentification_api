@@ -1,11 +1,7 @@
-const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
 const { register } = require('../controllers/auth');
 
 
 module.exports = async function (fastify) {
-
-
   fastify.post('/register', {
     schema: {
       body: {
@@ -26,40 +22,4 @@ module.exports = async function (fastify) {
       }
     }
   }, register);
-
-  // REFRESH TOKEN 
-
-  fastify.post('/refresh', {
-    preHandler: [fastify.verifyRefreshToken]
-  }, async (request, reply) => {
-    try {
-      const { user } = request;
-  
-      const newAccessToken = fastify.jwt.sign(
-        { id: user.id }, 
-        { expiresIn: '15m' }
-      );
-  
-      const newRefreshToken = fastify.jwt.sign(
-        { id: user.id }, 
-        { expiresIn: '7d' }
-      );
-
-      await fastify.prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: newRefreshToken }
-      });
-  
-      return { 
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken
-      };
-  
-    } catch (error) {
-      fastify.log.error('Refresh error:', error);
-      reply.code(500).send({ error: 'Erreur de rafraîchissement' });
-    }
-  });
-
-
 };
