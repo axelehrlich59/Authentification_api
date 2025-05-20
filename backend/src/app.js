@@ -28,10 +28,10 @@ fastify.register(require('./plugins/decorators'));
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Décorer l'instance Fastify avec Prisma
+// Decorate the fastify instance with the Prisma client
 fastify.decorate('prisma', prisma);
 
-// Fermer la connexion à l'arrêt
+// Shut the prisma client down when the app is closing
 fastify.addHook('onClose', async (instance) => {
   await instance.prisma.$disconnect();
 });
@@ -52,10 +52,8 @@ fastify.register(require('./routes/emailVerification'), { prefix: '/api/auth' })
 const errorHandler = require('./middleware/errorHandler');
 fastify.setErrorHandler(errorHandler);
 
-// Decorations 
 
-
-// Démarrage
+// Server start
 const start = async () => {
   try {
     await fastify.listen({ port: 3000 });
